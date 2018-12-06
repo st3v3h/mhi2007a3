@@ -1,0 +1,49 @@
+---
+title: "Assignment 3"
+author: "Steve Hawley"
+date: "December 12, 2018"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+## Section 0: Load the data and packages
+
+```{r get_data, message=FALSE, results='markup'}
+library(tidyverse)
+library(foreign) #for importing spss data
+library(summarytools) #for descriptive and cross tables
+#library(effsize) #for cohen's d
+#library(car) #for leven's test
+#library(sjstats) #for eta squared
+
+# import the spss file. Label the factors
+data<-read.spss("Data+for+assignments.sav",to.data.frame = TRUE, add.undeclared.levels = "no")
+# take a look at the data. See what the fields are
+head(data)
+#inspect the data types
+str(data)
+```
+## Section 1: ANCOVA
+
+#### **Research Question:** XXXXXXXXXXXXXXXXX
+
+```{r ancova, results='asis'}
+
+```
+
+## Section 2: Logistic Regression
+
+#### **Research Question:** XXXXXXXXXXXXXXXXX
+
+```{r logreg, results='asis'}
+
+```
+
+## Section 3: Hierarchical Multiple Regression
+
+#### **Research Question:** XXXXXXXXXXXXXXXXX
+
+```{r hmr, results='asis'}
+
+```
