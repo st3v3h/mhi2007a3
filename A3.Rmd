@@ -2,20 +2,23 @@
 title: "Assignment 3"
 author: "Steve Hawley"
 date: "December 12, 2018"
-output: html_notebook
-editor_options: 
+output:
+  html_document:
+    df_print: paged
+editor_options:
   chunk_output_type: console
 ---
 
 ## Section 0: Load the data and packages
 
-```{r get_data, message=FALSE, results='markup'}
+```{r get_data, message=FALSE, warning=FALSE, results='markup'}
 library(tidyverse)
 library(foreign) #for importing spss data
 library(summarytools) #for descriptive and cross tables
 #library(effsize) #for cohen's d
-#library(car) #for leven's test
-#library(sjstats) #for eta squared
+library(car) #for leven's test
+library(sjstats) #for eta squared
+library(effects) #for adjusted means in ancova
 
 # import the spss file. Label the factors
 data<-read.spss("Data+for+assignments.sav",to.data.frame = TRUE, add.undeclared.levels = "no")
@@ -29,6 +32,61 @@ str(data)
 #### **Research Question:** XXXXXXXXXXXXXXXXX
 
 ```{r ancova, results='asis'}
+#reference: http://faculty.missouri.edu/huangf/data/quantf/ancova_in_r_handout.pdf
+
+#subset the data for analysis
+anc<-data %>% 
+  select(gender, life, confid) %>% 
+  drop_na(gender, life, confid)
+
+#plot to look at homogeneity of regression
+ggplot(anc, aes(x=life, y=confid, color=gender)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "lm")
+#slopes look reasonably parellel 
+
+#Check descriptives
+anc %>% 
+  group_by(gender) %>% 
+  summarize(mean = mean(confid),
+            sd = sd(confid),
+            n = n())
+
+t.test(life~gender, data = anc)
+#t test is n.s. genders are not different on covariate 
+
+leveneTest(anc$confid,anc$gender)
+#levene's is n.s. therefore assumption of homogeneity of variance is met
+
+#test to look for equality of slopes
+mod1 <- aov(confid~gender + life + gender:life, data = anc)
+summary(mod1)
+#interaction is n.s.
+
+# mod1 <- lm(data = anc, confid~life + gender + life:gender)
+# Anova(mod1, type = "II")
+#Interaction is not significant, so the slope across groups is not different
+
+mod2 <- aov(confid~life + gender, data = anc)
+# mod2 <- lm(data = anc, confid~life + gender)
+# Anova(mod2, type = "II")
+summary(mod2)
+
+#effect size. Don't need to report results for covariate 
+eta_sq(mod2)
+
+#adjusted means
+effect("gender", mod2)
+
+
+#CHECKING ASSUMPTIONS
+
+hist(residuals(mod2))
+#histogram of residuals in normal... WHY/
+
+plot(fitted(mod2), residuals(mod2))
+
+qqnorm(residuals(mod2))
 
 ```
 
