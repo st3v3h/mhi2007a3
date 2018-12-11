@@ -19,6 +19,7 @@ library(summarytools) #for descriptive and cross tables
 library(car) #for leven's test
 library(sjstats) #for eta squared
 library(effects) #for adjusted means in ancova
+library(BaylorEdPsych) #for logisitic regression effect size
 
 # import the spss file. Label the factors
 data<-read.spss("Data+for+assignments.sav",to.data.frame = TRUE, add.undeclared.levels = "no")
@@ -95,6 +96,29 @@ qqnorm(residuals(mod2))
 #### **Research Question:** XXXXXXXXXXXXXXXXX
 
 ```{r logreg, results='asis'}
+
+lr <- data %>% 
+        select(work, age, polaff) %>% 
+        filter(polaff=="Republican" | polaff=="Democrat") %>% 
+        drop_na(work, age) %>% 
+        mutate(polaffbi = if_else(polaff=="Democrat",1,0))
+
+summary(lr)
+
+model <- glm(polaff~work + age,
+             family = binomial(link = 'logit'),
+             data = lr)
+summary(model)
+
+chidiff <- model$null.deviance - model$deviance
+dfdiff <- model$df.null - model$df.residual
+chidiff
+dfdiff
+pchisq(chidiff,dfdiff, lower.tail = F)
+
+PseudoR2(model)
+
+table(lr$polaff)
 
 ```
 
