@@ -97,14 +97,22 @@ qqnorm(residuals(mod2))
 
 ```{r logreg, results='asis'}
 
+#subset the data for analysis -- DV = polaff; cat IV = work; contin IV = age
 lr <- data %>% 
         select(work, age, polaff) %>% 
         filter(polaff=="Republican" | polaff=="Democrat") %>% 
-        drop_na(work, age) %>% 
-        mutate(polaffbi = if_else(polaff=="Democrat",1,0))
+        drop_na(work, age)
 
+#let's have a look to see if there's any issues
 summary(lr)
 
+# #balance polaff
+# t <- lr %>% group_by(polaff) %>% 
+#   sample_n(100)
+# table(t$polaff)
+# summary(t)
+
+#set up the model and get the output
 model <- glm(polaff~work + age,
              family = binomial(link = 'logit'),
              data = lr)
@@ -127,5 +135,91 @@ table(lr$polaff)
 #### **Research Question:** XXXXXXXXXXXXXXXXX
 
 ```{r hmr, results='asis'}
+
+#subset the data for this analysis
+hmr<- data %>% 
+  select(age,educ,life,confid) %>% 
+  drop_na(age,educ,life,confid)
+
+#Let's take a look for anythign weird
+summary(hmr)
+
+#running the final model to get assumption checks
+output <- lm(confid~life + educ + age, data=hmr)
+summary(output)
+
+####dealing with outliers
+#mahalanobis
+mahal <- mahalanobis(hmr,
+                     colMeans(hmr),
+                     cov(hmr))
+
+cutoff <- qchisq(1-.001, ncol(hmr))
+cutoff  
+ncol(hmr)#df
+
+#how many outliers are there?
+badmahal <- as.numeric(mahal>cutoff)
+table(badmahal)  
+
+#leverage
+k = 3
+leverage <-  hatvalues(output)
+cutleverage <-  (2*k+2)/nrow(hmr)
+cutleverage
+badleverage <-  as.numeric(leverage>cutleverage)
+table(badleverage)
+#54 people exceed the leverage cutoff
+
+#cooks
+cooks <-  cooks.distance(output)
+cutcooks <-  4/(nrow(hmr)-k-1)
+cutcooks
+badcooks <-  as.numeric(cooks>cutcooks)
+table(badcooks)
+#32 people exceed the cook's cutoff score
+
+##Total outliers -- general rule of thumb: people with 2 or more outlier indicators should be excluded
+totalout <-  badmahal + badleverage + badcooks
+table(totalout)
+#15 people have 2 indicators. We should exclude them.
+hmr_xo <- subset(hmr, totalout<2)
+
+#rerun analysis without outliers
+output <- lm(confid~life + educ + age, data=hmr_xo)
+summary(output)
+
+#additivity. Check to see if IVs are correlated. 
+correl <-  cor(hmr_xo, use = "pairwise.complete.obs")
+correl
+summary(output, correlation = T)
+
+#assumption set up
+standardized  <-  rstudent(output)
+fitted <-  scale(output$fitted.values)
+
+#normality
+hist(standardized)
+
+#linearity
+qqnorm(standardized)
+abline(0,1)
+
+#homogeneity and homoscedasticity
+plot(fitted,standardized)
+abline(0,0)
+abline(v=0)
+
+##First model of just demographics
+model1 <- lm(confid~age + educ, data = hmr_xo)
+summary(model1)
+
+library(QuantPsyc)
+lm.beta(model1)
+
+
+library(ppcor)
+partials <- pcor(hmr_xo[,c(1,2,4)], method = "pearson")
+partials$estimate^2
 
 ```
