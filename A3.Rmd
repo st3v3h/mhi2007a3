@@ -214,12 +214,46 @@ abline(v=0)
 model1 <- lm(confid~age + educ, data = hmr_xo)
 summary(model1)
 
+#to get Beta values
 library(QuantPsyc)
 lm.beta(model1)
 
-
+#to get pr values
 library(ppcor)
 partials <- pcor(hmr_xo[,c(1,2,4)], method = "pearson")
 partials$estimate^2
+
+#adding in the next IV to the model 
+model2 <- lm(confid~age + educ + life, data = hmr_xo)
+summary(model2)
+
+#compare models to see if there's a difference
+anova(model1, model2)
+
+#get beta for new model
+lm.beta(model2)
+
+#get pr values for new model
+partials <- pcor(hmr_xo, method = "pearson")
+partials$estimate^2
+
+#plot to show how accurate our model is
+cleanup <- theme(panel.grid.major = element_blank(),
+                 panel.grid.minor = element_blank(),
+                 panel.background = element_blank(),
+                 axis.line = element_line(colour = "black"),
+                 legend.key = element_rect(fill = "white"),
+                 text = element_text(size = 15))
+
+fitted <- model2$fitted.values
+
+scatter <- ggplot(hmr_xo, aes(fitted, confid))
+scatter + 
+  cleanup +
+  geom_point() +
+  geom_smooth(method = "lm", color = "black") +
+  xlab("Age + Education + Life Satisfaction") +
+  ylab("Confidence Score")
+
 
 ```
