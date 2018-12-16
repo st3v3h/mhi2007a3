@@ -15,7 +15,6 @@ editor_options:
 library(tidyverse)
 library(foreign) #for importing spss data
 library(summarytools) #for descriptive and cross tables
-#library(effsize) #for cohen's d
 library(car) #for leven's test
 library(sjstats) #for eta squared
 library(effects) #for adjusted means in ancova
@@ -30,9 +29,9 @@ str(data)
 ```
 ## Section 1: ANCOVA
 
-#### **Research Question:** XXXXXXXXXXXXXXXXX
+#### **Research Question:** Is there a difference in confidence between males and females when we control for overall life satisfaction?
 
-```{r ancova, results='asis'}
+```{r ancova}
 #reference: http://faculty.missouri.edu/huangf/data/quantf/ancova_in_r_handout.pdf
 
 #subset the data for analysis
@@ -56,25 +55,22 @@ anc %>%
 t.test(life~gender, data = anc)
 #t test is n.s. genders are not different on covariate 
 
-leveneTest(anc$confid,anc$gender)
+leveneTest(anc$confid,anc$gender, center = mean)
 #levene's is n.s. therefore assumption of homogeneity of variance is met
 
 #test to look for equality of slopes
 mod1 <- aov(confid~gender + life + gender:life, data = anc)
 summary(mod1)
-#interaction is n.s.
+EtaSq(mod1)
+#interaction of gender:life is n.s. so the slope across groups is not different
 
-# mod1 <- lm(data = anc, confid~life + gender + life:gender)
-# Anova(mod1, type = "II")
-#Interaction is not significant, so the slope across groups is not different
+
 
 mod2 <- aov(confid~life + gender, data = anc)
-# mod2 <- lm(data = anc, confid~life + gender)
-# Anova(mod2, type = "II")
 summary(mod2)
 
 #effect size. Don't need to report results for covariate 
-eta_sq(mod2)
+EtaSq(mod2)
 
 #adjusted means
 effect("gender", mod2)
@@ -83,25 +79,36 @@ effect("gender", mod2)
 #CHECKING ASSUMPTIONS
 
 hist(residuals(mod2))
-#histogram of residuals in normal... WHY/
+#histogram of residuals in normal
 
 plot(fitted(mod2), residuals(mod2))
 
 qqnorm(residuals(mod2))
 
+
+##########Alternative approach###########
+mod1 <- lm(data = anc, confid~life + gender + life:gender)
+Anova(mod1, type = "II")
+#Interaction is not significant, so the slope across groups is not different
+mod2 <- lm(data = anc, confid~life + gender)
+Anova(mod2, type = "II")
 ```
+
+To investigate whether gender has any effect on confidence a one-way ANCOVA was conducted. The independant variable, gender, included two levels, male and female. The dependant variable was a confidence score from a self reported assessment and the covariate was a life satisfaction score. A preliminary analysis evaluating the homogeneity-of-slopes assumption indicated that the relationship between the covariate and the dependent variable did not differe significantly as a function of the independent variable, F()
 
 ## Section 2: Logistic Regression
 
-#### **Research Question:** XXXXXXXXXXXXXXXXX
+#### **Research Question:** To what extent does the age and working status predict the politcal affiliation of a participant?
 
-```{r logreg, results='asis'}
+```{r logreg}
 
 #subset the data for analysis -- DV = polaff; cat IV = work; contin IV = age
 lr <- data %>% 
         select(work, age, polaff) %>% 
         filter(polaff=="Republican" | polaff=="Democrat") %>% 
         drop_na(work, age)
+#dropping the empty factor
+lr$polaff <- factor(lr$polaff)
 
 #let's have a look to see if there's any issues
 summary(lr)
@@ -118,23 +125,27 @@ model <- glm(polaff~work + age,
              data = lr)
 summary(model)
 
+#is there a significant reduction in error by adding the predictors of work and age (i.e., Null deviance vs. Residual deviance)?
 chidiff <- model$null.deviance - model$deviance
 dfdiff <- model$df.null - model$df.residual
 chidiff
 dfdiff
 pchisq(chidiff,dfdiff, lower.tail = F)
+#difference is n.s. (though trending towards significance) therefore predictors do not improve model
 
+#Effect size
 PseudoR2(model)
 
-table(lr$polaff)
 
 ```
 
 ## Section 3: Hierarchical Multiple Regression
 
-#### **Research Question:** XXXXXXXXXXXXXXXXX
+#### **Research Question:** After controlling for demographic variables (age and education), does life satisfaction of the participant predict their confidence?
 
 ```{r hmr, results='asis'}
+#For this section I followed this fantastic tutorial:
+#https://www.youtube.com/watch?v=zFEP-lJ1LD0&feature=youtu.be
 
 #subset the data for this analysis
 hmr<- data %>% 
