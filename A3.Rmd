@@ -19,6 +19,8 @@ library(car) #for leven's test
 library(sjstats) #for eta squared
 library(effects) #for adjusted means in ancova
 library(BaylorEdPsych) #for logisitic regression effect size
+library(QuantPsyc) # For Beta values
+library(ppcor) #for pr values
 
 # import the spss file. Label the factors
 data<-read.spss("Data+for+assignments.sav",to.data.frame = TRUE, add.undeclared.levels = "no")
@@ -143,7 +145,6 @@ table(lr$polaff)
 #look at the % correct from the model
 #fitted values give probability of being Republican
 correct <- model$fitted.values
-correct
 #Thresholding values into bins where 0.5 is equal split between groups
 binarycorrect <- ifelse(correct >0.5,1,0)
 binarycorrect <- factor(binarycorrect,
@@ -167,7 +168,7 @@ exp(model$coefficients)
 
 ```
 #####Results (APA style)
-A logistic regression was conducted to explore whether age and working status are related to political affiliation. The model had a non-significant fit X2(3) = 7.63, p = 0.054, Nagelkerke R2 = 0.029. The model correctly classifies 60% of participants in the sample. The classification of Democrats (93.7%) was much better than Republicans (4.5%). Of two predictor variables considered in this analysis, only age was significantly related to political affiliation. Specifically, with each additional year in age, there was approximately a 2% increased chance of a Democrat political affiliation.
+A logistic regression was conducted to explore whether age and working status are related to political affiliation. The model had a non-significant fit X^2^(3) = 7.63, p = 0.054, Nagelkerke R^2^ = 0.029. The model correctly classifies 60% of participants in the sample. The classification of Democrats (93.7%) was much better than Republicans (4.5%). Of two predictor variables considered in this analysis, only age was significantly related to political affiliation. Specifically, with each additional year in age, there was approximately a 2% increased chance of a Democrat political affiliation.
 
 
 
@@ -191,7 +192,7 @@ summary(hmr)
 output <- lm(confid~life + educ + age, data=hmr)
 summary(output)
 
-####dealing with outliers
+####DEALING WITH OUTLIERS####
 #mahalanobis
 mahal <- mahalanobis(hmr,
                      colMeans(hmr),
@@ -258,11 +259,9 @@ model1 <- lm(confid~age + educ, data = hmr_xo)
 summary(model1)
 
 #to get Beta values
-library(QuantPsyc)
 lm.beta(model1)
 
 #to get pr values
-library(ppcor)
 partials <- pcor(hmr_xo[,c(1,2,4)], method = "pearson")
 partials$estimate^2
 
