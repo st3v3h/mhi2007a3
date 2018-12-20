@@ -31,7 +31,7 @@ str(data)
 
 #### **Research Question:** Is there a difference in confidence between males and females when we control for overall life satisfaction?
 
-```{r ancova}
+```{r ancova, results='markup'}
 #reference: http://faculty.missouri.edu/huangf/data/quantf/ancova_in_r_handout.pdf
 
 #subset the data for analysis
@@ -93,16 +93,16 @@ Anova(mod1, type = "II")
 mod2 <- lm(data = anc, confid~life + gender)
 Anova(mod2, type = "II")
 ```
-
-To investigate whether gender has any effect on confidence a one-way ANCOVA was conducted. The independant variable, gender, included two levels, male and female. The dependant variable was a confidence score from a self reported assessment and the covariate was a life satisfaction score. A preliminary analysis evaluating the homogeneity-of-slopes assumption indicated that the relationship between the covariate and the dependent variable did not differe significantly as a function of the independent variable, F()
+#####Results (APA style)
+To investigate whether gender has any effect on confidence, a one-way ANCOVA was conducted. The independant variable, gender, included two levels, male and female. The dependant variable was a confidence score from a self reported assessment and the covariate was a life satisfaction score. A preliminary analysis evaluating the homogeneity-of-slopes assumption indicated that the relationship between the covariate and the dependent variable did not differe significantly as a function of the independent variable, F(1,652) = 1.855, MSE = 127, p = 0.174, partial eta_squared = 0.003. The ANCOVA was significant, F(1,653) = 43.9, MSE = 2999, p <0.01, partial eta_squared = 0.06. The strength of relationship between gender and confidence was small, as assessed by partial eta_squared, with the gender accounting for 6% of the variance in the dependent variable, holding life score constant. The means of the confidence scores adjusted for initial differences in life satisfaction scores were ordered in the following way: males (M = 65.60) and females (M = 61.17). Follow up tests were not conducted as gender contained only two factors.
 
 ## Section 2: Logistic Regression
 
 #### **Research Question:** To what extent does the age and working status predict the politcal affiliation of a participant?
 
-```{r logreg}
+```{r logreg, results='markup'}
 
-#subset the data for analysis -- DV = polaff; cat IV = work; contin IV = age
+#subset the data for analysis -- DV = polaff ("independen" factor filtered out); cat IV = work; contin IV = age
 lr <- data %>% 
         select(work, age, polaff) %>% 
         filter(polaff=="Republican" | polaff=="Democrat") %>% 
@@ -112,18 +112,19 @@ lr$polaff <- factor(lr$polaff)
 
 #let's have a look to see if there's any issues
 summary(lr)
-
-# #balance polaff
-# t <- lr %>% group_by(polaff) %>% 
-#   sample_n(100)
-# table(t$polaff)
-# summary(t)
+#nothing out of the ordinary
 
 #set up the model and get the output
 model <- glm(polaff~work + age,
              family = binomial(link = 'logit'),
              data = lr)
 summary(model)
+
+modelx <- glm(polaff~work,
+             family = binomial(link = 'logit'),
+             data = lr)
+summary(modelx)
+
 
 #is there a significant reduction in error by adding the predictors of work and age (i.e., Null deviance vs. Residual deviance)?
 chidiff <- model$null.deviance - model$deviance
@@ -136,15 +137,46 @@ pchisq(chidiff,dfdiff, lower.tail = F)
 #Effect size
 PseudoR2(model)
 
+#checking which group is the lower group
+table(lr$polaff)
+
+#look at the % correct from the model
+#fitted values give probability of being Republican
+correct <- model$fitted.values
+correct
+#Thresholding values into bins where 0.5 is equal split between groups
+binarycorrect <- ifelse(correct >0.5,1,0)
+binarycorrect <- factor(binarycorrect,
+                        levels = c(0,1),
+                        labels = c("Republican pred", "Democrat pred"))
+
+table(lr$polaff, binarycorrect)
+#from the table, 6 republicans predicted correctly, 14 incorrectly
+#207 Democrats predicted correctly, 128 predicted incorrectly
+
+#To get probabiliy of correctly guessing using model:
+#Republican
+6/(6+128)*100
+#Democrat
+207/(14+207)*100
+#Overall
+(6+207)/nrow(lr)*100
+
+#to get Odds Ratios
+exp(model$coefficients)
 
 ```
+#####Results (APA style)
+A logistic regression was conducted to explore whether age and working status are related to political affiliation. The model had a non-significant fit X2(3) = 7.63, p = 0.054, Nagelkerke R2 = 0.029. The model correctly classifies 60% of participants in the sample. The classification of Democrats (93.7%) was much better than Republicans (4.5%). Of two predictor variables considered in this analysis, only age was significantly related to political affiliation. Specifically, with each additional year in age, there was approximately a 2% increased chance of a Democrat political affiliation.
+
+
 
 ## Section 3: Hierarchical Multiple Regression
 
 #### **Research Question:** After controlling for demographic variables (age and education), does life satisfaction of the participant predict their confidence?
 
-```{r hmr, results='asis'}
-#For this section I followed this fantastic tutorial:
+```{r hmr, results='markup'}
+#For this section I followed this tutorial:
 #https://www.youtube.com/watch?v=zFEP-lJ1LD0&feature=youtu.be
 
 #subset the data for this analysis
