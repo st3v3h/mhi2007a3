@@ -3,6 +3,7 @@ title: "Assignment 3"
 author: "Steve Hawley"
 date: "December 12, 2018"
 output:
+  word_document: default
   html_document:
     df_print: paged
 editor_options:
@@ -12,15 +13,14 @@ editor_options:
 ## Section 0: Load the data and packages
 
 ```{r get_data, message=FALSE, warning=FALSE, results='markup'}
-library(tidyverse)
+library(tidyverse) #for data management
 library(foreign) #for importing spss data
-library(summarytools) #for descriptive and cross tables
 library(car) #for leven's test
 library(sjstats) #for eta squared
 library(effects) #for adjusted means in ancova
 library(BaylorEdPsych) #for logisitic regression effect size
-library(QuantPsyc) # For Beta values
-library(ppcor) #for pr values
+#library(QuantPsyc) # For Beta values -- conflicts with dplyr
+#library(ppcor) #for pr values -- conflicts with dplyr
 
 # import the spss file. Label the factors
 data<-read.spss("Data+for+assignments.sav",to.data.frame = TRUE, add.undeclared.levels = "no")
@@ -66,8 +66,6 @@ summary(mod1)
 EtaSq(mod1)
 #interaction of gender:life is n.s. so the slope across groups is not different
 
-
-
 mod2 <- aov(confid~life + gender, data = anc)
 summary(mod2)
 
@@ -104,7 +102,7 @@ To investigate whether gender has any effect on confidence, a one-way ANCOVA was
 
 ```{r logreg, results='markup'}
 
-#subset the data for analysis -- DV = polaff ("independen" factor filtered out); cat IV = work; contin IV = age
+#subset the data for analysis -- DV = polaff ("independent" factor filtered out); cat IV = work; contin IV = age
 lr <- data %>% 
         select(work, age, polaff) %>% 
         filter(polaff=="Republican" | polaff=="Democrat") %>% 
@@ -169,7 +167,6 @@ exp(model$coefficients)
 ```
 #####Results (APA style)
 A logistic regression was conducted to explore whether age and working status are related to political affiliation. The model had a non-significant fit X^2^(3) = 7.63, p = 0.054, Nagelkerke R^2^ = 0.029. The model correctly classifies 60% of participants in the sample. The classification of Democrats (93.7%) was much better than Republicans (4.5%). Of two predictor variables considered in this analysis, only age was significantly related to political affiliation. Specifically, with each additional year in age, there was approximately a 2% increased chance of a Democrat political affiliation.
-
 
 
 ## Section 3: Hierarchical Multiple Regression
@@ -259,10 +256,10 @@ model1 <- lm(confid~age + educ, data = hmr_xo)
 summary(model1)
 
 #to get Beta values
-lm.beta(model1)
+QuantPsyc::lm.beta(model1)
 
 #to get pr values
-partials <- pcor(hmr_xo[,c(1,2,4)], method = "pearson")
+partials <- ppcor::pcor(hmr_xo[,c(1,2,4)], method = "pearson")
 partials$estimate^2
 
 #adding in the next IV to the model 
@@ -273,10 +270,10 @@ summary(model2)
 anova(model1, model2)
 
 #get beta for new model
-lm.beta(model2)
+QuantPsyc::lm.beta(model2)
 
 #get pr values for new model
-partials <- pcor(hmr_xo, method = "pearson")
+partials <- ppcor::pcor(hmr_xo, method = "pearson")
 partials$estimate^2
 
 #plot to show how accurate our model is
@@ -299,3 +296,6 @@ scatter +
 
 
 ```
+#####Results (APA style)
+  Age, education and life satisfaction score were used to predict a participant's confidence score. The data were screened for assumptions, and 15 participants were removed as outliers due to high Mahalanobis, Cook's and/or leverage scores. Linearity, normality, multicollinearity, homogeneity and homoscedasticity were all met.
+  Age and education were entered first into a hierarchical regression to control for demographic differences in confidence. Overall, this model was significant, indicating that demographics predict a participant's confidence score, F(2,608) = 8.48, p<0.01, R^2^ = 0.03. Age was a stronger predictor of confidence, B = 0.12, t(608) = 3.186, p<0.01, pr^2^ = 0.02, which showed that participants are likely to be more confident as they get older. Education was also positively related to confidence, B = 0.09, t(608) = 2.27, p = 0.02, pr^2^ = 0.008; therefore, more educated participants tend to be more confident. Next, life satisfaction score was added in a second step to examine its predictive value after controlling for demographic variables. The addition of this variable was significant DELTA_F(1,607) = 762.95, p < 0.001, DELTA_R^2^ = 0.539 (model 2 - model 1). Life satisfaction scores was the highest predictor of confidence score where participants with a higher life satisfaction score also had higher confidence scores B = 0.75, t(607) = 27.62, p<0.001, pr^2^ = 0.557
